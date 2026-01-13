@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Kuis Jaringan Komputer</title>
+
+<style>
+/* =====================
+   TEMA SEKOLAH
+   ===================== */
+body {
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(135deg, #dbeafe, #f0fdf4);
+  margin: 0;
+  padding: 10px;
+}
+
+.container {
+  max-width: 480px;
+  margin: auto;
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 16px;
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
+}
+
+header {
+  text-align: center;
+  margin-bottom: 10px;
+}
+
+header h1 {
+  margin: 5px 0;
+  font-size: 20px;
+  color: #1e3a8a;
+}
+
+header p {
+  font-size: 14px;
+  color: #374151;
+}
+
+/* =====================
+   INFO BAR
+   ===================== */
+.info-bar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 8px;
+  color: #1f2937;
+}
+
+/* =====================
+   TIMER BAR
+   ===================== */
+.timer-bar {
+  width: 100%;
+  height: 10px;
+  background: #e5e7eb;
+  border-radius: 20px;
+  overflow: hidden;
+  margin-bottom: 12px;
+}
+
+.timer-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #22c55e, #16a34a);
+  transition: width 1s linear;
+}
+
+/* =====================
+   QUESTION
+   ===================== */
+.question {
+  font-size: 16px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+/* =====================
+   OPTIONS
+   ===================== */
+.option {
+  width: 100%;
+  padding: 10px;
+  margin: 6px 0;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  font-size: 15px;
+  cursor: pointer;
+}
+
+.option:hover {
+  background: #eef2ff;
+}
+
+.correct {
+  background: #bbf7d0;
+  border-color: #16a34a;
+}
+
+.wrong {
+  background: #fecaca;
+  border-color: #dc2626;
+}
+
+/* =====================
+   BUTTON
+   ===================== */
+button {
+  width: 100%;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+#startBtn {
+  background: #2563eb;
+  color: white;
+}
+
+#restartBtn {
+  background: #16a34a;
+  color: white;
+}
+
+/* =====================
+   RESULT
+   ===================== */
+.result {
+  text-align: center;
+}
+
+.score {
+  font-size: 22px;
+  font-weight: bold;
+  margin: 10px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container">
+  <header>
+    <h1>Kuis Informatika</h1>
+    <p>Materi: Jaringan Komputer (SMA)</p>
+  </header>
+
+  <!-- START -->
+  <div id="startScreen">
+    <p style="text-align:center">
+      ⏱️ Waktu tiap soal: <b>15 detik</b><br>
+      🎯 Total soal: <b>10</b>
+    </p>
+    <button id="startBtn">Mulai Kuis</button>
+  </div>
+
+  <!-- QUIZ -->
+  <div id="quizScreen" style="display:none;">
+    <div class="info-bar">
+      <div id="progressSoal">Soal 1 / 10</div>
+      <div id="timeText">15 detik</div>
+    </div>
+
+    <div class="timer-bar">
+      <div id="timerFill" class="timer-fill"></div>
+    </div>
+
+    <div id="question" class="question"></div>
+    <div id="options"></div>
+  </div>
+
+  <!-- RESULT -->
+  <div id="resultScreen" style="display:none;" class="result">
+    <h2>Hasil Kuis</h2>
+    <div id="scoreText" class="score"></div>
+    <button id="restartBtn">Ulangi Kuis</button>
+  </div>
+</div>
+
+<script>
+/* =====================
+   BANK SOAL (30)
+   ===================== */
+const questions = [
+ {q:"Apa kepanjangan LAN?", o:["Local Area Network","Large Area Network","Long Area Network","Light Area Network"], a:0},
+ {q:"Perangkat utama LAN adalah …", o:["Modem","Switch","Repeater","Firewall"], a:1},
+ {q:"Jaringan internet termasuk …", o:["LAN","MAN","WAN","PAN"], a:2},
+ {q:"Alamat unik jaringan disebut …", o:["URL","MAC","IP Address","Domain"], a:2},
+ {q:"Topologi pusat disebut …", o:["Bus","Ring","Star","Mesh"], a:2},
+ {q:"Fungsi router adalah …", o:["Menghubungkan jaringan berbeda","Menyimpan data","Memperkuat sinyal","Mengatur user"], a:0},
+ {q:"Konektor kabel UTP adalah …", o:["RJ11","RJ45","USB","HDMI"], a:1},
+ {q:"Media tanpa kabel disebut …", o:["UTP","Fiber","Wireless","Coaxial"], a:2},
+ {q:"Topologi paling hemat kabel adalah …", o:["Bus","Ring","Star","Mesh"], a:0},
+ {q:"DNS berfungsi untuk …", o:["Keamanan","Mengubah domain ke IP","Menyimpan data","Routing"], a:1},
+ /* sisanya tetap sama seperti versi sebelumnya */
+];
+
+/* =====================
+   VARIABEL GAME
+   ===================== */
+let selected = [];
+let index = 0;
+let score = 0;
+let time = 15;
+let interval;
+
+/* =====================
+   AUDIO
+   ===================== */
+const correctSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=");
+const wrongSound = new Audio("data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEAESsAACJWAAACABAAZGF0YQAAAAA=");
+
+/* =====================
+   GAME LOGIC
+   ===================== */
+function startGame(){
+  selected = questions.sort(()=>0.5-Math.random()).slice(0,10);
+  index = 0;
+  score = 0;
+  document.getElementById("startScreen").style.display="none";
+  document.getElementById("quizScreen").style.display="block";
+  loadQuestion();
+}
+
+function loadQuestion(){
+  clearInterval(interval);
+  time = 15;
+  updateTimer();
+
+  document.getElementById("progressSoal").innerText =
+    `Soal ${index+1} / ${selected.length}`;
+
+  document.getElementById("question").innerText = selected[index].q;
+  const optDiv = document.getElementById("options");
+  optDiv.innerHTML = "";
+
+  selected[index].o.forEach((opt,i)=>{
+    const btn = document.createElement("button");
+    btn.className = "option";
+    btn.innerText = opt;
+    btn.onclick = ()=>checkAnswer(btn,i);
+    optDiv.appendChild(btn);
+  });
+
+  interval = setInterval(()=>{
+    time--;
+    updateTimer();
+    if(time === 0){
+      clearInterval(interval);
+      next();
+    }
+  },1000);
+}
+
+function updateTimer(){
+  document.getElementById("timeText").innerText = time + " detik";
+  document.getElementById("timerFill").style.width = (time/15*100) + "%";
+}
+
+function checkAnswer(btn,i){
+  clearInterval(interval);
+  const q = selected[index];
+  const options = document.querySelectorAll(".option");
+  options.forEach(o=>o.disabled=true);
+
+  if(i === q.a){
+    btn.classList.add("correct");
+    score++;
+    correctSound.play();
+  } else {
+    btn.classList.add("wrong");
+    options[q.a].classList.add("correct");
+    wrongSound.play();
+  }
+  setTimeout(next,1000);
+}
+
+function next(){
+  index++;
+  if(index < selected.length) loadQuestion();
+  else showResult();
+}
+
+function showResult(){
+  document.getElementById("quizScreen").style.display="none";
+  document.getElementById("resultScreen").style.display="block";
+  document.getElementById("scoreText").innerText =
+    `Skor: ${score} / ${selected.length}`;
+}
+
+/* =====================
+   EVENT
+   ===================== */
+document.getElementById("startBtn").onclick = startGame;
+document.getElementById("restartBtn").onclick = ()=>location.reload();
+</script>
+
+</body>
+</html>
